@@ -221,6 +221,8 @@
     } else {
       state.screen = 'picker';
     }
+    // Keep the chosen scoring mode across rounds, even when no round is in progress.
+    if (data.vote && data.vote.mode === 'quick' && state.vote) state.vote.mode = 'quick';
   }
 
   function zeros(n) { var a = []; for (var i = 0; i < n; i++) a.push(0); return a; }
@@ -470,6 +472,12 @@
     }
 
     if (state.screen !== lastScreen) {
+      // Keyboard users: the focused button was replaced, so move focus into the new screen.
+      var a2 = document.activeElement;
+      if (lastScreen !== null && (!a2 || a2 === document.body)) {
+        var head = root.querySelector('h1, h2, .starter') || root;
+        if (head) { head.setAttribute('tabindex', '-1'); try { head.focus({ preventScroll: true }); } catch (e) { head.focus(); } }
+      }
       root.classList.remove('enter');
       void root.offsetWidth; // restart entrance animation
       root.classList.add('enter');
@@ -767,7 +775,10 @@
 
     'add-player': function () {
       if (!state.draft || state.draft.length >= MAX_PLAYERS) return;
-      state.draft.push({ name: defaultName(state.draft.length), score: 0 });
+      var used = state.draft.map(function (p) { return (p.name || '').trim(); });
+      var k = 0;
+      while (used.indexOf(defaultName(k)) !== -1) k++;
+      state.draft.push({ name: defaultName(k), score: 0 });
       render();
       var inputs = document.querySelectorAll('[data-testid="player-name-input"]');
       var last = inputs[inputs.length - 1];
