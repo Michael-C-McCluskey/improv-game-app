@@ -350,6 +350,8 @@ html.tv .tv-label::after { content: " ON"; }
 html.tv .starter { font-size: 2.8rem; }
 html.tv .prompt-value { font-size: 1.45rem; }
 html.tv .timer-display { font-size: clamp(5rem, 16vw, 12rem); }
+html.tv .timer { container-type: inline-size; }
+html.tv .timer-display { font-size: clamp(4rem, 30cqi, 12rem); white-space: nowrap; }
 html.tv .game-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
 @media (min-width: 700px) {
   html.tv .screen[data-screen="scene"],

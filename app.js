@@ -911,7 +911,7 @@
         save();
         render();
         var h = document.querySelector('[data-testid="current-voter"]');
-        if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (err) { h.focus(); } }
+        if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (err) { h.focus(); } try { h.scrollIntoView({ block: 'center' }); } catch (err) { h.scrollIntoView(); } }
       }
     },
     'award-plus': function (el) {
