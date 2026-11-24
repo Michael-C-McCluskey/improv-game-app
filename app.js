@@ -104,6 +104,7 @@
   var tickId = null;
   var flashTimeout = null;
   var flashReturnFocus = null;
+  var enterTimeout = null;
   var wakeLock = null;
   var wakeLockPending = false;
   var audioCtx = null;
@@ -359,10 +360,21 @@
     flashReturnFocus = document.activeElement;
     flash.hidden = false;
     flash.setAttribute('tabindex', '-1');
+    setBackgroundInert(true);
     try { flash.focus({ preventScroll: true }); } catch (e) { flash.focus(); }
     document.body.classList.add('flashing');
     clearTimeout(flashTimeout);
     flashTimeout = setTimeout(hideFlash, 4000);
+  }
+
+  function setBackgroundInert(on) {
+    // While the time's-up overlay is open, nothing behind it can be tabbed to or clicked.
+    ['.topbar', '#screen'].forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el) return;
+      if (on) { el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true'); }
+      else { el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+    });
   }
 
   function hideFlash() {
@@ -370,6 +382,7 @@
     var flash = document.getElementById('flash');
     var wasOpen = flash && !flash.hidden;
     if (flash) flash.hidden = true;
+    setBackgroundInert(false);
     document.body.classList.remove('flashing');
     if (wasOpen && flashReturnFocus && document.contains(flashReturnFocus) && !flashReturnFocus.disabled) {
       try { flashReturnFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
@@ -509,6 +522,8 @@
       root.classList.remove('enter');
       void root.offsetWidth; // restart entrance animation
       root.classList.add('enter');
+      clearTimeout(enterTimeout);
+      enterTimeout = setTimeout(function () { root.classList.remove('enter'); }, 600); // only animate on real screen changes
       window.scrollTo(0, 0);
       lastScreen = state.screen;
     }
