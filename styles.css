@@ -56,14 +56,14 @@ button:disabled { cursor: not-allowed; }
 /* ---------- Top bar ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: center; gap: .6rem;
+  display: flex; flex-wrap: wrap; row-gap: .35rem; align-items: center; gap: .6rem;
   padding: .55rem max(1rem, env(safe-area-inset-right)) .55rem max(1rem, env(safe-area-inset-left));
   padding-top: max(.55rem, env(safe-area-inset-top));
   background: rgba(22, 18, 46, .92);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(8px);
 }
-.brand { font-weight: 800; font-size: 1.1rem; letter-spacing: .01em; margin-right: auto; white-space: nowrap; }
+.brand { font-weight: 800; font-size: 1.1rem; letter-spacing: .01em; margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
 .round-badge {
   background: var(--card2); color: var(--yellow);
   border: 1px solid var(--line);
@@ -240,10 +240,10 @@ ul, ol { padding: 0; margin: 0; list-style: none; }
 .tab { min-height: 48px; border: 0; border-radius: 12px; background: transparent; font-weight: 800; color: var(--muted); }
 .tab[aria-pressed="true"] { background: var(--yellow); color: var(--ink); }
 .voter-progress { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 1rem; }
-.voter-progress li { padding: .2rem .7rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: .9rem; font-weight: 700; }
+.voter-progress li { max-width: 100%; min-width: 0; overflow-wrap: anywhere; padding: .2rem .7rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: .9rem; font-weight: 700; }
 .voter-progress li.now { border-color: var(--yellow); color: var(--yellow); }
 .voter-progress li.done { background: var(--green); color: var(--ink); border-color: var(--green); }
-.vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+.vote-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
 .vote-option {
   width: 100%; min-height: 80px; padding: .7rem;
   border-radius: 16px; border: 3px solid var(--line); background: var(--bg2);
@@ -365,3 +365,6 @@ html.tv .game-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14
   html.tv .screen[data-screen="setup"],
   html.tv .screen[data-screen="vote"] { max-width: 1000px; }
 }
+
+/* Long unbroken player names must wrap, not clip */
+.title, .results h2, .results h3, [data-testid="current-voter"] { overflow-wrap: anywhere; }
