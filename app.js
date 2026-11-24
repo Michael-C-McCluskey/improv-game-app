@@ -434,11 +434,17 @@
     if (lenLabel) lenLabel.textContent = fmtTime(len);
     var startBtn = document.querySelector('[data-testid="timer-start"]');
     var pauseBtn = document.querySelector('[data-testid="timer-pause"]');
+    var hadFocus = document.activeElement;
     if (startBtn) {
       startBtn.disabled = state.timer.running;
       startBtn.textContent = rem > 0 && rem < len ? '▶ Resume' : '▶ Start';
     }
     if (pauseBtn) pauseBtn.disabled = !state.timer.running;
+    // Keep keyboard focus on the timer when Start/Pause disables itself.
+    if (startBtn && pauseBtn) {
+      if (hadFocus === startBtn && startBtn.disabled && !pauseBtn.disabled) pauseBtn.focus();
+      else if (hadFocus === pauseBtn && pauseBtn.disabled && !startBtn.disabled) startBtn.focus();
+    }
     var minus = document.querySelector('[data-testid="timer-minus"]');
     var plus = document.querySelector('[data-testid="timer-plus"]');
     if (minus) minus.disabled = timerLength() <= T_MIN;
