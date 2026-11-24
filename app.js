@@ -972,6 +972,7 @@
 
   document.addEventListener('keydown', function (e) {
     var t = e.target;
+    if (e.isComposing || e.keyCode === 229) return; // don't interrupt IME composition
     if (e.key === 'Enter' && t && t.getAttribute && t.getAttribute('data-testid') === 'player-name-input') {
       e.preventDefault();
       var inputs = Array.prototype.slice.call(document.querySelectorAll('[data-testid="player-name-input"]'));
