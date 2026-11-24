@@ -57,7 +57,7 @@ button:disabled { cursor: not-allowed; }
 .topbar {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; gap: .6rem;
-  padding: .55rem max(1rem, env(safe-area-inset-left)) .55rem max(1rem, env(safe-area-inset-right));
+  padding: .55rem max(1rem, env(safe-area-inset-right)) .55rem max(1rem, env(safe-area-inset-left));
   padding-top: max(.55rem, env(safe-area-inset-top));
   background: rgba(22, 18, 46, .92);
   border-bottom: 1px solid var(--line);
@@ -300,7 +300,7 @@ ul, ol { padding: 0; margin: 0; list-style: none; }
   .round-badge { font-size: .75rem; padding: .2rem .5rem; white-space: normal; }
   .tv-toggle { padding: 0 .6rem; }
 }
-html, body { overflow-x: hidden; }
+html, body { overflow-x: clip; }
 
 /* ---------- Animations (off under reduced motion) ---------- */
 @media (prefers-reduced-motion: no-preference) {
