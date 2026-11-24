@@ -450,8 +450,20 @@
       case 'results': html = renderResults(); break;
       default: state.screen = 'setup'; html = renderSetup();
     }
+    // Remember the focused control so same-screen re-renders don't lose keyboard focus.
+    var ae = document.activeElement, focusSel = null;
+    if (ae && root.contains(ae) && ae.getAttribute('data-testid') && state.screen === lastScreen) {
+      focusSel = '[data-testid="' + ae.getAttribute('data-testid') + '"]';
+      ['data-index', 'data-player', 'data-mode'].forEach(function (a) {
+        if (ae.hasAttribute(a)) focusSel += '[' + a + '="' + ae.getAttribute(a) + '"]';
+      });
+    }
     root.innerHTML = html;
     root.setAttribute('data-screen', state.screen);
+    if (focusSel) {
+      var nf = root.querySelector(focusSel);
+      if (nf && !nf.disabled) { try { nf.focus({ preventScroll: true }); } catch (e) { nf.focus(); } }
+    }
 
     if (state.screen !== lastScreen) {
       root.classList.remove('enter');
@@ -480,7 +492,7 @@
   function renderSetup() {
     if (!state.draft) {
       state.draft = state.players.length
-        ? state.players.map(function (p) { return { name: p.name, score: p.score }; })
+        ? state.players.map(function (p, i) { return { name: p.name, score: p.score, orig: i }; })
         : [{ name: defaultName(0), score: 0 }, { name: defaultName(1), score: 0 }];
     }
     var d = state.draft;
@@ -771,6 +783,13 @@
       });
       state.draft = null;
       if (!editing) { state.round = 0; state.starter = 0; state.lastRound = null; }
+      else {
+        // Keep the scheduled starter (or the next remaining player) after roster edits.
+        var oldStarter = state.starter, idx = -1;
+        d.forEach(function (p, i) { if (idx < 0 && p.orig === oldStarter) idx = i; });
+        if (idx < 0) d.forEach(function (p, i) { if (idx < 0 && typeof p.orig === 'number' && p.orig > oldStarter) idx = i; });
+        state.starter = idx < 0 ? 0 : idx;
+      }
       state.starter = clamp(state.starter, 0, state.players.length - 1);
       state.lastRound = null;
       state.gameId = null;
@@ -832,7 +851,8 @@
 
     'scene-done': function () {
       stopTimerSilently();
-      initVote();
+      // Keep votes/awards already given this round (e.g. after "Back to scene").
+      if (!state.vote || !Array.isArray(state.vote.awards) || state.vote.awards.length !== state.players.length) initVote();
       go('vote');
     },
     'back-to-picker': function () {

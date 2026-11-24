@@ -29,7 +29,14 @@ function assert(c, msg) { if (!c) throw new Error('ASSERT FAILED: ' + msg); cons
 (async () => {
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}/improv-game-app/`;
-  const browser = await chromium.launch(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {});
+  let browser;
+  try {
+    browser = await chromium.launch(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {});
+  } catch (e) {
+    srv.close();
+    console.error(e.message || e);
+    process.exit(1);
+  }
   const external = [];
   const errors = [];
   const shotDir = path.join(ROOT, 'docs', 'screenshots');
@@ -101,16 +108,14 @@ function assert(c, msg) { if (!c) throw new Error('ASSERT FAILED: ' + msg); cons
     console.log('Persistence');
     await page.reload();
     const st2 = await page.evaluate(() => JSON.parse(JSON.stringify(window.__improv.state)));
-    assert(JSON.stringify((st2.players || []).map((p) => p.name)) === JSON.stringify(players.map((p) => p.name)), 'players persisted across reload');
+    assert(JSON.stringify((st2.players || []).map((p) => [p.name, p.score])) === JSON.stringify(players.map((p) => [p.name, p.score])), 'players and scores persisted across reload');
+    assert(await tid('next-round').isVisible(), 'results screen restored after reload');
 
     console.log('Next round');
-    if (await tid('next-round').count() === 0 || !(await tid('next-round').isVisible())) {
-      // after reload app may resume on a different screen; navigate to scoreboard if needed
-    }
-    if (await tid('next-round').isVisible()) {
-      await tid('next-round').click();
-      assert(await tid('game-card').count() >= 4, 'next round returns to game picker');
-    }
+    await tid('next-round').click();
+    assert(await tid('game-card').count() >= 4, 'next round returns to game picker');
+    const st3 = await page.evaluate(() => JSON.parse(JSON.stringify(window.__improv.state)));
+    assert(st3.starter === 1, 'starter rotates to Anna for round 2');
 
     if (SHOTS) {
       console.log('TV mode');
