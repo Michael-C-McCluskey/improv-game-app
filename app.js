@@ -145,6 +145,7 @@
       snapshot.timer.running = false;
       if (state.timer.running) snapshot.timer.remainingMs = Math.max(0, endAt - Date.now());
       localStorage.setItem(SAVE_SLOT, JSON.stringify(snapshot));
+      otherTabSaved = false;
     } catch (e) { /* storage unavailable: play on without saving */ }
   }
 
@@ -1051,11 +1052,19 @@
       tick();
       if (state.timer.running) requestWakeLock();
     } else {
-      save();
+      lifecycleSave();
     }
   });
 
-  window.addEventListener('pagehide', save);
+  // Another tab saved newer progress: don't let this tab's untouched snapshot overwrite it
+  // on hide/close. Any real action in this tab saves normally and clears the flag.
+  var otherTabSaved = false;
+  window.addEventListener('storage', function (e) {
+    if (e.key === SAVE_SLOT) otherTabSaved = true;
+  });
+  function lifecycleSave() { if (!otherTabSaved) save(); }
+
+  window.addEventListener('pagehide', lifecycleSave);
 
   // ---------- Boot ----------
   load();
