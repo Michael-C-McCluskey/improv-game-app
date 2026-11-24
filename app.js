@@ -103,6 +103,7 @@
   var endAt = 0;
   var tickId = null;
   var flashTimeout = null;
+  var flashReturnFocus = null;
   var wakeLock = null;
   var wakeLockPending = false;
   var audioCtx = null;
@@ -355,7 +356,10 @@
     beep();
     var flash = document.getElementById('flash');
     if (!flash) return;
+    flashReturnFocus = document.activeElement;
     flash.hidden = false;
+    flash.setAttribute('tabindex', '-1');
+    try { flash.focus({ preventScroll: true }); } catch (e) { flash.focus(); }
     document.body.classList.add('flashing');
     clearTimeout(flashTimeout);
     flashTimeout = setTimeout(hideFlash, 4000);
@@ -364,8 +368,13 @@
   function hideFlash() {
     clearTimeout(flashTimeout);
     var flash = document.getElementById('flash');
+    var wasOpen = flash && !flash.hidden;
     if (flash) flash.hidden = true;
     document.body.classList.remove('flashing');
+    if (wasOpen && flashReturnFocus && document.contains(flashReturnFocus) && !flashReturnFocus.disabled) {
+      try { flashReturnFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    }
+    flashReturnFocus = null;
   }
 
   function unlockAudio() {
@@ -416,7 +425,20 @@
     try { if (wakeLock) { var l = wakeLock; wakeLock = null; l.release().catch(function () {}); } } catch (e) { wakeLock = null; }
   }
 
+  function updateMiniTimer() {
+    // Compact countdown in the sticky top bar, so it stays visible while players scroll the prompts.
+    var mini = document.getElementById('mini-timer');
+    if (!mini) return;
+    var show = state.screen === 'scene' && state.timer.running;
+    mini.hidden = !show;
+    if (show) {
+      mini.textContent = '⏱ ' + fmtTime(state.timer.remainingMs);
+      mini.classList.toggle('is-low', state.timer.remainingMs <= 10000);
+    }
+  }
+
   function updateTimerUI() {
+    updateMiniTimer();
     var disp = document.querySelector('[data-testid="timer-display"]');
     if (!disp) return;
     var rem = state.timer.remainingMs;
@@ -496,6 +518,7 @@
       popKey = null;
     }
 
+    updateMiniTimer();
     var badge = document.getElementById('round-badge');
     if (state.players.length && state.screen !== 'setup') {
       badge.hidden = false;
@@ -985,6 +1008,8 @@
   document.addEventListener('keydown', function (e) {
     var t = e.target;
     if (e.isComposing || e.keyCode === 229) return; // don't interrupt IME composition
+    var fl = document.getElementById('flash');
+    if (fl && !fl.hidden && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); hideFlash(); return; }
     if (e.key === 'Enter' && t && t.getAttribute && t.getAttribute('data-testid') === 'player-name-input') {
       e.preventDefault();
       var inputs = Array.prototype.slice.call(document.querySelectorAll('[data-testid="player-name-input"]'));
