@@ -195,6 +195,9 @@
       state.prompts = data.prompts;
       state.extras = Array.isArray(data.extras) ? data.extras.filter(function (x) {
         return x && typeof x.value === 'string' && P[x.list];
+      }).map(function (x) {
+        if (x.secret) x.revealed = false; // secrets start hidden again after a reload
+        return x;
       }) : buildExtras(game.id);
       var ms = data.timer ? Number(data.timer.remainingMs) : NaN;
       state.timer.remainingMs = isFinite(ms) ? clamp(ms, 0, timerLength() * 1000) : timerLength() * 1000;
