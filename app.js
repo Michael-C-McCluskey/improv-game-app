@@ -908,6 +908,8 @@
       } else {
         save();
         render();
+        var h = document.querySelector('[data-testid="current-voter"]');
+        if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (err) { h.focus(); } }
       }
     },
     'award-plus': function (el) {
@@ -934,6 +936,8 @@
       go('picker');
     },
     'new-game': function () {
+      var hasScores = state.round > 0 || state.players.some(function (p) { return p.score > 0; });
+      if (hasScores && !window.confirm('Start a new game? This clears every score.')) return;
       state.players.forEach(function (p) { p.score = 0; });
       state.round = 0;
       state.starter = 0;
