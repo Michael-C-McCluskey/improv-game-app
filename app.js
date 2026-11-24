@@ -104,6 +104,7 @@
   var tickId = null;
   var flashTimeout = null;
   var wakeLock = null;
+  var wakeLockPending = false;
   var audioCtx = null;
   var lastScreen = null;
   var popKey = null;
@@ -196,7 +197,8 @@
       var ms = data.timer ? Number(data.timer.remainingMs) : NaN;
       state.timer.remainingMs = isFinite(ms) ? clamp(ms, 0, timerLength() * 1000) : timerLength() * 1000;
       state.screen = screen;
-      if (screen === 'vote') {
+      // Restore the round's tally on both scene and vote screens (Back to scene keeps it).
+      if (data.vote) {
         var v = data.vote || {};
         state.vote = {
           mode: v.mode === 'quick' ? 'quick' : 'vote',
@@ -396,12 +398,14 @@
 
   function requestWakeLock() {
     try {
-      if (navigator.wakeLock && navigator.wakeLock.request && !wakeLock) {
+      if (navigator.wakeLock && navigator.wakeLock.request && !wakeLock && !wakeLockPending) {
+        wakeLockPending = true;
         navigator.wakeLock.request('screen').then(function (lock) {
-          if (!state.timer.running) { lock.release().catch(function () {}); return; }
+          wakeLockPending = false;
+          if (!state.timer.running || wakeLock) { lock.release().catch(function () {}); return; }
           wakeLock = lock;
           lock.addEventListener('release', function () { if (wakeLock === lock) wakeLock = null; });
-        }).catch(function () {});
+        }).catch(function () { wakeLockPending = false; });
       }
     } catch (e) { /* ignore */ }
   }
@@ -732,6 +736,7 @@
     state.extras = buildExtras(gameId);
     stopTimerSilently();
     state.timer.remainingMs = timerLength() * 1000;
+    initVote(); // a new scene never inherits votes/awards from an abandoned one
     go('scene');
   }
 

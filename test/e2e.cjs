@@ -9,14 +9,17 @@ const ROOT = path.resolve(__dirname, '..');
 const SHOTS = process.argv.includes('--screenshots');
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.json': 'application/json' };
 
+const ALLOWED = new Set(['index.html', 'styles.css', 'app.js', 'prompts.js']);
+
 function serve() {
   return new Promise((resolve) => {
     const srv = http.createServer((req, res) => {
-      let p = decodeURIComponent(req.url.split('?')[0]);
-      p = p.replace(/^\/improv-game-app/, '');
+      let p = req.url.split('?')[0].replace(/^\/improv-game-app/, '');
       if (p === '/' || p === '') p = '/index.html';
-      const f = path.join(ROOT, path.normalize(p));
-      if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('nf'); }
+      // Serve only the app's own static assets (explicit allowlist).
+      const name = p.replace(/^\//, '');
+      if (!ALLOWED.has(name)) { res.writeHead(404); return res.end('nf'); }
+      const f = path.join(ROOT, name);
       res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' });
       fs.createReadStream(f).pipe(res);
     });
@@ -116,6 +119,32 @@ function assert(c, msg) { if (!c) throw new Error('ASSERT FAILED: ' + msg); cons
     assert(await tid('game-card').count() >= 4, 'next round returns to game picker');
     const st3 = await page.evaluate(() => JSON.parse(JSON.stringify(window.__improv.state)));
     assert(st3.starter === 1, 'starter rotates to Anna for round 2');
+
+    console.log('Scoring restore + carry-over (round 2)');
+    const vstate = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__improv.state.vote)));
+    await tid('game-card').nth(1).click();
+    await tid('scene-done').click();
+    await tid('vote-option').nth(0).click();
+    await tid('vote-submit').click();
+    assert((await vstate()).votes.length === 1, 'one vote recorded');
+    await tid('back-to-scene').click();
+    await page.reload();
+    assert(await tid('scene-done').isVisible(), 'reload resumes on the scene');
+    assert((await vstate()).votes.length === 1, 'vote survives Back to scene + reload');
+    await tid('scene-done').click();
+    assert((await vstate()).votes.length === 1, 'vote still there when returning to voting');
+    await tid('back-to-scene').click();
+    await tid('back-to-picker').click();
+    await tid('game-card').nth(2).click();
+    assert((await vstate()).votes.length === 0, 'replacement scene starts with no votes');
+    await tid('scene-done').click();
+    const vs = await vstate();
+    assert(vs.votes.length === 0 && vs.voter === 0 && vs.awards.every((x) => x === 0), 'replacement scene vote screen is clean');
+    const before = (await page.evaluate(() => window.__improv.state.players.map((p) => p.score))).join(',');
+    for (let v = 0; v < 2; v++) { await tid('vote-option').nth(0).click(); await tid('vote-submit').click(); }
+    await tid('scoreboard').waitFor({ state: 'visible', timeout: 5000 });
+    const after = await page.evaluate(() => window.__improv.state.players.map((p) => p.score));
+    assert(after.join(',') === '2,2' && before === '0,2', `round 2 scores only count the replacement scene (${before} -> ${after})`);
 
     if (SHOTS) {
       console.log('TV mode');
