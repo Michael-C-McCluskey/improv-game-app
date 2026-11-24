@@ -368,3 +368,5 @@ html.tv .game-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14
 
 /* Long unbroken player names must wrap, not clip */
 .title, .results h2, .results h3, [data-testid="current-voter"] { overflow-wrap: anywhere; }
+.btn small { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.btn.big { flex-wrap: wrap; }

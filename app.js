@@ -16,7 +16,7 @@
       id: 'yes-and', emoji: '🤝', name: 'Yes, And...',
       tagline: 'Accept every idea and build on it. No blocking!',
       rules: [
-        'Every line starts with “Yes, and…”',
+        'Start with the first line, then every line after starts with “Yes, and…”',
         'Whatever your partner says is true',
         'Add one new detail each time',
         'Said “No” or “But”? Laugh and start a new line'
@@ -583,7 +583,9 @@
   function renderScene() {
     var g = getGame(state.gameId);
     var rules = g.rules.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
-    var prompts = PROMPT_KEYS.map(function (k) { return renderPromptRow(k, state.prompts[k.key]); }).join('');
+    // Alphabet Scene's first line must start with the start letter, so the generic first-line prompt is hidden there.
+    var prompts = PROMPT_KEYS.filter(function (k) { return !(g.id === 'alphabet' && k.key === 'line'); })
+      .map(function (k) { return renderPromptRow(k, state.prompts[k.key]); }).join('');
     var extras = state.extras.map(renderExtra).join('');
     var sub = g.id === 'party-quirks'
       ? '<p class="muted">' + esc(playerName(state.starter)) + ' is the host.</p>'
@@ -635,7 +637,7 @@
         return '<li class="award-row"><span class="award-name">' + esc(p.name) + '</span>' +
           '<button type="button" class="icon-btn" data-action="award-minus" data-index="' + i + '" data-testid="quick-award-minus" aria-label="Remove a point from ' + esc(p.name) + '"' + (v.awards[i] > 0 ? '' : ' disabled') + '>−</button>' +
           '<span class="award-count" data-testid="quick-award-count">+' + v.awards[i] + '</span>' +
-          '<button type="button" class="btn award" data-action="award-plus" data-index="' + i + '" data-testid="quick-award" data-player="' + i + '">+1</button>' +
+          '<button type="button" class="btn award" data-action="award-plus" data-index="' + i + '" data-testid="quick-award" data-player="' + i + '" aria-label="Give a point to ' + esc(p.name) + '">+1</button>' +
           '</li>';
       }).join('');
       body = '<section class="card">' +
